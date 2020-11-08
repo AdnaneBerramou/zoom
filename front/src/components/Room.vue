@@ -1,14 +1,21 @@
 <template>
-    <div>
-        <p>{{roomId}}</p>
-        <p>{{roomPwd}}</p>
-        <p>{{personalId}}</p>
-        <p>{{count}}</p>
-        <p>{{count2}}</p>
+    <div class="main container-fluid">
         <div id="video-grid" ref="videoGrid"></div>
-        <br>
-        <!-- <button @click="active('video')">video</button>
-        <button @click="active('audio')">audio</button> -->
+        <div class="chat"></div>
+        <div class="controls row align-items-center">
+            <div class="col-4 d-flex justify-content-center">
+                <div><i class="fas fa-microphone"></i><br><span>Désactiver</span></div>
+                <div><i class="fas fa-video"></i><br><span>Désactiver</span></div>
+            </div>
+
+            <div class="col-4 d-flex justify-content-center">
+                <div><i class="fas fa-shield-alt"></i><br><span>Sécurité</span></div>
+                <div><i class="fas fa-user-friends"></i><br><span>Participants</span></div>
+                <div><i class="fas fa-comment-alt"></i><br><span>Converser</span></div>
+            </div>
+
+            <button class="offset-2 col-1">Fin</button>
+        </div>
     </div>
 </template>
 
@@ -28,6 +35,10 @@ export default {
 
     methods: {
 
+        muteUnmute(){
+
+        },
+
         // active(media) {
         //     let api = media == 'video' ? 'camera' : 'microphone';
 
@@ -37,7 +48,7 @@ export default {
         //     });
         // },
 
-        addVideoStream(stream, who, from) {
+        addVideoStream(stream/*, who, from*/) {
             let video = document.createElement('video');
             this.count2++;
 
@@ -46,7 +57,8 @@ export default {
             video.addEventListener('loadedmetadata', () => {
                 video.play();
             });
-            this.$refs.videoGrid.append(video, document.createElement('br'), who, document.createElement('br'));
+            this.$refs.videoGrid.append(video);
+            // this.$refs.videoGrid.append(video, document.createElement('br'), who, document.createElement('br'));
         },
 
         connectToNewUser(userId, peer) {
@@ -57,7 +69,7 @@ export default {
             }).then(stream => {
                 const call = peer.call(userId, stream);
                 call.on('stream', remoteStream => {
-                    this.addVideoStream(remoteStream, userId, 'calling');
+                    // this.addVideoStream(remoteStream/*, userId, 'calling'*/);
                 }, error => {
                     console.log(error);
                 });
@@ -89,7 +101,7 @@ export default {
                     video: true,
                     // audio: true
                 }).then(stream => {
-                    this.addVideoStream(stream, 'moi', 'mounted');
+                    // this.addVideoStream(stream/*, 'moi', 'mounted'*/);
                 }).catch(error => {
                     console.log(error);
                 });
@@ -117,17 +129,69 @@ export default {
             }).then(stream => {
                 call.answer(stream);
                 call.on('stream', remoteStream => {
-                    this.addVideoStream(remoteStream, call.peer, 'responding');
+                    // this.addVideoStream(remoteStream/*, call.peer, 'responding'*/);
                 })
             })
         }, error => {
             console.log(error);
         });
+        window.onbeforeunload = () => {
+            this.$http.get('http://localhost:3000/test').then(result => {
+                console.log(result);
+            }).catch(error => {
+                console.log(error);
+            });
+            document.body.style.background = 'blue';
+        }
     }
 }
-
-
 </script>
 
 <style lang="scss" scoped>
+    .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        margin: 0px;
+        background: #1A1A1A;
+        height: 80px;
+        div {
+            div {
+                display: inline-block;
+                padding: 15px;
+                text-align: center;
+                i {
+                    font-size: 22px;
+                    color: #A8A8A8;
+                }
+                span {
+                    font-size: 10px;
+                    color: #A8A8A8;
+                }
+                &:hover {
+                    i,span {
+                        color: #D5D5D5;
+                    }
+                    background-color: #2E2E2E;
+                    border-radius: 10px;
+                    cursor: pointer;
+                }
+            }
+        }
+        button {
+            background: #B72525;
+            font-weight: 600;
+            color: white;
+            outline: none;
+            border: solid 1px transparent;
+            border-radius: 10px;
+            font-size: 14px;
+            padding: 4px 15px;
+            &:hover {
+                background-color: #DE2828;
+            }
+        }
+    }
+
 </style>
