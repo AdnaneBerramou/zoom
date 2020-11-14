@@ -1,4 +1,4 @@
-# zoom-front
+# beta
 
 > A Vue.js project
 

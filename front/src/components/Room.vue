@@ -1,197 +1,300 @@
 <template>
-    <div class="main container-fluid">
-        <div id="video-grid" ref="videoGrid"></div>
-        <div class="chat"></div>
-        <div class="controls row align-items-center">
-            <div class="col-4 d-flex justify-content-center">
-                <div><i class="fas fa-microphone"></i><br><span>Désactiver</span></div>
-                <div><i class="fas fa-video"></i><br><span>Désactiver</span></div>
-            </div>
+    <div style="width: 100%; height: 100%;">
+        <div class="room container-fluid" v-if="roomAvailable">
+            <div class="room__video-grid" ref="videoGrid"></div>
+            <div class="room__chat"></div>
+            <div class="room__footer row d-flex align-items-center justify-content-center">
+                <div class="footer__controls row col-3 d-flex justify-content-center">
+                    <div class="controls__icon" @click="muteUnmuteAudio()"><i class="fas fa-microphone" ref="microphone"></i><br><span>Micro</span></div>
+                    <div class="controls__icon" @click="stopPlayVideo()"><i class="fas fa-video" ref="video"></i><br><span>Caméra</span></div>
+                </div>
 
-            <div class="col-4 d-flex justify-content-center">
-                <div><i class="fas fa-shield-alt"></i><br><span>Sécurité</span></div>
-                <div><i class="fas fa-user-friends"></i><br><span>Participants</span></div>
-                <div><i class="fas fa-comment-alt"></i><br><span>Converser</span></div>
-            </div>
+                <div class="footer__controls row col-6 d-flex justify-content-center">
+                    <div class="controls__icon" @click="test()"><i class="fas fa-shield-alt"></i><br><span>Sécurité</span></div>
+                    <div class="controls__icon"><i class="fas fa-user-friends"></i><br><span>Participants</span></div>
+                    <div class="controls__icon"><i class="fas fa-comment-alt"></i><br><span>Converser</span></div>
+                </div>
 
-            <button class="offset-2 col-1">Fin</button>
+                <button class="footer__btn col-2 offset-1 col-lg-1 offset-lg-2">Fin</button>
+            </div>
         </div>
+        <error-component v-if="!roomAvailable&&roomAvailable!==undefined" :msg="errorMsg" :notIndex='true'></error-component>
     </div>
 </template>
 
 <script scoped>
-export default {
+import ErrorComponent from './Error';
 
+export default {
     data() {
         return {
-            roomId: null,
-            roomPwd: null,
-            personalId: null,
-            roomAvailable: false,
-            count: 0,
-            count2: 0
+            roomAvailable: undefined,
+            errorMsg: '',
+            userPseudo: '',
+            userStream: false,
+            socket: false,
+            peer: false,
+            nbVideos: 0
         };
     },
 
-    methods: {
-
-        muteUnmute(){
-
-        },
-
-        // active(media) {
-        //     let api = media == 'video' ? 'camera' : 'microphone';
-
-        //     navigator.permissions.query({name:api}).then(resu => {
-        //         //handle if permission state denied, explain how to grante the permission
-        //         //peut-etre faudra-t-il nester le mediadevices dans le permissions query
-        //     });
-        // },
-
-        addVideoStream(stream/*, who, from*/) {
-            let video = document.createElement('video');
-            this.count2++;
-
-            Object.assign(video.style, {width: '300px', height: '150px', background: 'black'});
-            video.srcObject = stream;
-            video.addEventListener('loadedmetadata', () => {
-                video.play();
-            });
-            this.$refs.videoGrid.append(video);
-            // this.$refs.videoGrid.append(video, document.createElement('br'), who, document.createElement('br'));
-        },
-
-        connectToNewUser(userId, peer) {
-            this.count++;
-            navigator.mediaDevices.getUserMedia({
-                video: true,
-                // audio: true
-            }).then(stream => {
-                const call = peer.call(userId, stream);
-                call.on('stream', remoteStream => {
-                    // this.addVideoStream(remoteStream/*, userId, 'calling'*/);
-                }, error => {
-                    console.log(error);
-                });
-            })
+    computed: {
+        nbColumns() {
+            return 'auto '.repeat(Math.ceil(Math.sqrt(this.nbVideos)));
         }
     },
 
-    mounted() {
-        const socket = io.connect('http://localhost:3000');
-        const peer = new Peer(undefined, {
+    methods: {
+        test() {
+            console.log('click [ OK ]');
+            this.socket.emit('disconnect');
+        },
+        muteUnmuteAudio(){
+            let bool = !this.userStream.getAudioTracks()[0].enabled;
+            this.userStream.getAudioTracks()[0].enabled = bool;
+
+            if(bool) {
+                this.$refs.microphone.classList.add('fa-microphone');
+                this.$refs.microphone.classList.remove('fa-microphone-slash');
+            } else {
+                this.$refs.microphone.classList.add('fa-microphone-slash');
+                this.$refs.microphone.classList.remove('fa-microphone');
+            }
+        },
+
+        stopPlayVideo() {
+            let bool = !this.userStream.getVideoTracks()[0].enabled;
+            this.userStream.getVideoTracks()[0].enabled = bool;
+
+            if(bool) {
+                this.$refs.video.classList.add('fa-video');
+                this.$refs.video.classList.remove('fa-video-slash');
+            } else {
+                this.$refs.video.classList.add('fa-video-slash');
+                this.$refs.video.classList.remove('fa-video');
+            }
+        },
+
+        addStream(video, cell, stream) {
+            video.srcObject = stream;
+            video.addEventListener('loadedmetadata', () => {
+                video.play()
+            });
+            Object.assign(video.style, {position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, objectFit: 'contain'});
+            Object.assign(cell.style, {width: '100%', height: 0, position: 'relative', background: 'black', paddingBottom: '50%', border: 'solid 1px #222'});
+            cell.appendChild(video);
+            this.$refs.videoGrid.appendChild(cell);
+        },
+    },
+
+    // beforeCreate() {
+    //     console.log('before');
+    // },
+
+    beforeDestroy() {
+        if (this.userStream !== false) {
+            this.userStream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        this.socket.close();
+    },
+
+    created() {
+        this.socket = io.connect('http://localhost:3000', {reconnection: true});
+        this.peer = new Peer(undefined, {
             path: '/peerjs',
             host: '/',
             port: '3000'
         });
 
-        this.$http.get('http://localhost:3000/find-room', {
-            params: {
-                id: this.$route.params.id
-            }
-        }).then(result => {
-            if (result.data.err !== undefined) {
-                console.log('Chambre inexistante');
-            } else {
-                this.roomId = result.data.id;
-                this.roomPwd = result.data.pwd;
+        this.$http.get('http://localhost:3000/find-room', {params: {id: this.$route.params.id}}).then(result => {
+            if (result.data.err === undefined) {
                 this.roomAvailable = true;
+                this.roomId = this.$route.params.id;
+                this.userPseudo = localStorage.getItem('zoom-pseudo');
 
-                navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    // audio: true
-                }).then(stream => {
-                    // this.addVideoStream(stream/*, 'moi', 'mounted'*/);
+                navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                    const myVideo = document.createElement('video');
+                    const cell = document.createElement('div');
+                    cell.classList.add('video-grid__cell');
+                    myVideo.muted = true;
+                    this.userStream = stream;
+                    this.nbVideos++;
+                    console.log('nbvideos++');
+                    document.querySelector('.room__video-grid').style.gridTemplateColumns = this.nbColumns;
+                    this.addStream(myVideo, cell, this.userStream);
                 }).catch(error => {
                     console.log(error);
+                    this.roomAvailable = false;
+                    this.errorMsg = 'Pour vous laisser participer à une réunion, nous avons besoin d\'accéder à votre webcam ainsi que votre microphone. Une fois en réunion, vous pourrez les activer/désactiver à votre guise. Si le navigateur ne vous propose plus de nous autoriser les accès (suite à un premier refus de votre part) il faudra que vous alliez bidouiller les paramètres de votre navigateur. Une fois les permissions données, vous n\'aurez aucun message d\'erreur';
                 });
-
-                peer.on('open', personalId => {
-                    socket.emit('join-room', this.roomId, personalId);
-                    this.personalId = personalId;
-                });
-
+            } else {
+                this.roomAvailable = false;
+                this.errorMsg = 'Cette réunion n\'existe pas/plus. Vérifiez et réessayez.';
             }
         }).catch(error => {
-            console.log(error);
+            this.roomAvailable = false;
+            this.errorMsg = 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
+        });
+    },
+
+    mounted() {
+        this.peer.on('open', userId => {
+            this.socket.emit('join-room', this.roomId, userId);
         });
 
+        this.peer.on('call', call => {
+            let wait = setInterval(() => {
+                if (this.userStream !== false) {
+                    call.answer(this.userStream);
+                    const remoteVideo = document.createElement('video');
+                    const cell = document.createElement('div');
+                    cell.dataset.id = call.peer;
+                    cell.classList.add('video-grid__cell');
+                    this.nbVideos++;
+                    console.log('nbvideos++');
+                    document.querySelector('.room__video-grid').style.gridTemplateColumns = this.nbColumns;
+                    call.on('stream', remoteStream => {
+                        this.addStream(remoteVideo, cell, remoteStream);
+                    }, error => {
+                        this.roomAvailable = false;
+                        this.errorMsg = 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
+                    });
+                    clearInterval(wait);
+                }
+            }, 250);
 
-        socket.on('new-user', userId => {
-            console.log('new user => ' + userId);
-            this.connectToNewUser(userId, peer);
-        });
-
-        peer.on('call', call => {
-            navigator.mediaDevices.getUserMedia({
-                video: true,
-                // audio: true
-            }).then(stream => {
-                call.answer(stream);
-                call.on('stream', remoteStream => {
-                    // this.addVideoStream(remoteStream/*, call.peer, 'responding'*/);
-                })
-            })
         }, error => {
-            console.log(error);
+            this.roomAvailable = false;
+            this.errorMsg = 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
         });
-        window.onbeforeunload = () => {
-            this.$http.get('http://localhost:3000/test').then(result => {
-                console.log(result);
-            }).catch(error => {
-                console.log(error);
+
+        this.socket.on('user-connected', remotePeerId => {
+            const call = this.peer.call(remotePeerId, this.userStream);
+            const remoteVideo = document.createElement('video');
+            const cell = document.createElement('div');
+            cell.classList.add('video-grid__cell');
+            cell.dataset.id = remotePeerId;
+            this.nbVideos++;
+            console.log('nbvideos++');
+            document.querySelector('.room__video-grid').style.gridTemplateColumns = this.nbColumns;
+
+            call.on('stream', remoteStream => {
+                this.addStream(remoteVideo, cell, remoteStream);
+            }, error => {
+                this.roomAvailable = false;
+                this.errorMsg = 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
             });
-            document.body.style.background = 'blue';
-        }
+
+        });
+
+        this.socket.on('user-disconnected', remotePeerId => {
+            if (document.querySelector(`[data-id='${remotePeerId}']`) !== null) {
+                this.nbVideos--;
+                console.log('nbvideos--');
+                console.log(this.nbColumns);
+                document.querySelector('.room__video-grid').style.gridTemplateColumns = this.nbColumns;
+                document.querySelector(`[data-id='${remotePeerId}']`).remove();
+            }
+        });
+    },
+
+
+    components: {
+        errorComponent: ErrorComponent
     }
 }
 </script>
 
 <style lang="scss" scoped>
-    .controls {
-        position: absolute;
-        bottom: 0;
-        left: 0;
+    .room {
+        background-color: #222;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .room__video-grid {
+        display: grid;
+        margin-top: auto;
+    }
+
+    .room__footer {
         width: 100%;
         margin: 0px;
         background: #1A1A1A;
-        height: 80px;
-        div {
-            div {
-                display: inline-block;
-                padding: 15px;
-                text-align: center;
-                i {
-                    font-size: 22px;
-                    color: #A8A8A8;
-                }
-                span {
-                    font-size: 10px;
-                    color: #A8A8A8;
-                }
-                &:hover {
-                    i,span {
-                        color: #D5D5D5;
-                    }
-                    background-color: #2E2E2E;
-                    border-radius: 10px;
-                    cursor: pointer;
-                }
+        margin-top: auto;
+    }
+
+    .controls__icon {
+        display: inline-block;
+        text-align: center;
+        padding: 15px;
+        min-width: 40px;
+        max-width: 80px;
+
+        i {
+            font-size: 22px;
+            color: #A8A8A8;
+        }
+
+        span {
+            font-size: 10px;
+            color: #A8A8A8;
+        }
+
+        &:hover {
+            background-color: #2E2E2E;
+            border-radius: 10px;
+            cursor: pointer;
+
+            i,span {
+                color: #D5D5D5;
+            }
+
+            .fa-video-slash, .fa-microphone-slash {
+                color: #DE2828;
             }
         }
-        button {
-            background: #B72525;
-            font-weight: 600;
-            color: white;
-            outline: none;
-            border: solid 1px transparent;
-            border-radius: 10px;
-            font-size: 14px;
-            padding: 4px 15px;
-            &:hover {
-                background-color: #DE2828;
-            }
+
+        .fa-video-slash, .fa-microphone-slash {
+            color: #B72525;
         }
     }
 
+    .footer__btn {
+        background: #B72525;
+        font-weight: 600;
+        color: white;
+        outline: none;
+        border: solid 1px transparent;
+        border-radius: 10px;
+        font-size: 14px;
+        padding: 4px 15px;
+
+        &:hover {
+            background-color: #DE2828;
+        }
+    }
+
+    @media (max-width: 650px) {
+    .controls__icon {
+        margin: 5px;
+        i {
+            font-size: 18px;
+        }
+
+        span {
+            display: none;
+        }
+    }
+
+    .footer__btn {
+        font-size: 12px;
+    }
+}
 </style>

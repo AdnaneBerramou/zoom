@@ -16,6 +16,7 @@ router.get('/create-room', (req, res) => {
     let newRoom = idNpwd();
 
     rooms.push(newRoom);
+    console.log(`New room created: {id: ${newRoom.id}, pwd: ${newRoom.pwd}}`);
     res.json(newRoom);
 });
 
@@ -33,7 +34,7 @@ router.get('/find-room', (req, res) => {
 });
 
 router.get('/test', (req, res) => {
-    console.log('bien recu');
+    console.log('Test [ OK ]');
 })
 
 module.exports = [router, rooms];

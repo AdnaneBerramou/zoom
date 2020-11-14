@@ -1,5 +1,5 @@
 {
-  "name": "zoom-front",
+  "name": "beta",
   "description": "A Vue.js project",
   "version": "1.0.0",
   "author": "adzer",
@@ -12,7 +12,7 @@
   "dependencies": {
     "axios": "^0.21.0",
     "vue": "^2.5.11",
-    "vue-router": "^3.4.8"
+    "vue-router": "^3.4.9"
   },
   "browserslist": [
     "> 1%",

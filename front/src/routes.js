@@ -1,10 +1,9 @@
-import Home from './components/Home.vue'
-import JoinRoom from './components/JoinRoom.vue'
-import Room from './components/Room.vue'
+import Index from './components/Index'
+import Room from './components/Room'
+import NotFound from './components/NotFound'
 
 export default [
-    {path: '/', component: Home},
-    {path: '/join', component: JoinRoom},
-    {path: '/room/:id([0-9]{11})', component: Room},
-    {path: '*', component: Home}
+    {path: '/', name: 'index', component: Index},
+    {path: '/room/:id([0-9]{11})', name: 'room', component: Room},
+    {path: '*', name: '404', component: NotFound}
 ]

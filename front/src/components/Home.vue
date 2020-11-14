@@ -1,52 +1,39 @@
 <template>
-    <div id="home-div" class="row flex-column">
-        <div id="logo-div" class="col-12"><img src="../assets/zoomLogo.png" class="" alt="logo zoom"></div>
+    <div class="home-div row">
+        <div class="home-div__logo col-12"><img src="../assets/zoomLogo.png" alt="logo zoom"></div>
         <div class="w-100"></div>
-        <button @click="link('join')" id="join-room" class="col-6 offset-3 col-lg-4 offset-lg-4">Rejoindre une réunion</button>
+        <button class="home-div__btn home-div__btn--blue col-6 offset-3" @click="switchComponent('Join')">Rejoindre une réunion</button>
         <div class="w-100"></div>
-        <button @click="link('room')" id="create-room" class="col-6 offset-3 col-lg-4 offset-lg-4">Créer une réunion</button>
-        <p class="version col-12">Version : 1.0 by adzer</p>
+        <button class="home-div__btn home-div__btn--white col-6 offset-3" @click="switchComponent('Create')">Créer une réunion</button>
+        <p class="home-div__infos col-12">Version : 1.0 by adzer</p>
     </div>
 </template>
 
 <script>
+import { bus } from '../main'
+
 export default {
-    data() {
-        return {
-            newRoom: null
-        }
-    },
     methods: {
-        link(route) {
-            if (route == 'room') {
-                this.$http.get('http://localhost:3000/create-room').then(resu => {
-                    this.newRoom = resu.data.id;
-                    window.location.href = window.location.href.split`/`.filter((v, k, s) => k < 3).join`/` + '/room/' + this.newRoom;
-                }).catch(err => {
-                    alert('svp essayer plus tard');
-                });
-            } else {
-                window.location.href = window.location.href.split`/`.filter((v, k, s) => k < 3).join`/` + '/' + route;
-            }
+        switchComponent(componentName) {
+            bus.$emit('switchComponent', componentName);
         }
     }
 }
 </script>
 
 <style lang="scss" scoped>
-    #home-div {
-        padding: 50px;
-        margin: 80px 80px 20px 80px;
-
+    .home-div {
+        max-width: 550px;
+        margin: 100px auto;
     }
 
-    #logo-div {
+    .home-div__logo {
         text-align: center;
         margin-top: 50px;
         margin-bottom: 50px;
     }
 
-    button {
+    .home-div__btn {
         font-size: 14px;
         border-radius: 8px;
         outline: none;
@@ -55,7 +42,7 @@ export default {
         margin-bottom: 5px;
     }
 
-    #join-room {
+    .home-div__btn--blue {
         background-color: #0E72ED;
         font-weight: 700;
         color: white;
@@ -68,7 +55,7 @@ export default {
         }
     }
 
-    #create-room {
+    .home-div__btn--white {
         border: solid #e7e7e7 1px;
         background-color: white;
         &:hover {
@@ -80,7 +67,7 @@ export default {
         }
     }
 
-    .version {
+    .home-div__infos {
         font-size: 12px;
         color: #acacac;
         text-align: center;
