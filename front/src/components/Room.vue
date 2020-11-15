@@ -2,20 +2,23 @@
     <div style="width: 100%; height: 100%;">
         <div class="room container-fluid" v-if="roomAvailable">
             <div class="room__video-grid" ref="videoGrid"></div>
-            <div class="room__chat"></div>
+            <div class="room-users-chat" ref="chatUsers">
+                <div class="room__chat" v-if="!hideChat" ref="chat">salut chat</div>
+                <div class="room__users" v-if="!hideUsers" ref="users">salut participants</div>
+            </div>
             <div class="room__footer row d-flex align-items-center justify-content-center">
-                <div class="footer__controls row col-3 d-flex justify-content-center">
+                <div class="footer__controls col-3 d-flex justify-content-start">
                     <div class="controls__icon" @click="muteUnmuteAudio()"><i class="fas fa-microphone" ref="microphone"></i><br><span>Micro</span></div>
                     <div class="controls__icon" @click="stopPlayVideo()"><i class="fas fa-video" ref="video"></i><br><span>Caméra</span></div>
                 </div>
 
-                <div class="footer__controls row col-6 d-flex justify-content-center">
+                <div class="footer__controls col-6 d-flex justify-content-center">
                     <div class="controls__icon" @click="test()"><i class="fas fa-shield-alt"></i><br><span>Sécurité</span></div>
-                    <div class="controls__icon"><i class="fas fa-user-friends"></i><br><span>Participants</span></div>
-                    <div class="controls__icon"><i class="fas fa-comment-alt"></i><br><span>Converser</span></div>
+                    <div class="controls__icon" @click="hideDisplay('hideUsers')"><i class="fas fa-user-friends"></i><sup>{{nbVideos}}</sup><br><span>Participants</span></div>
+                    <div class="controls__icon" @click="hideDisplay('hideChat')"><i class="fas fa-comment-alt"></i><br><span>Converser</span></div>
                 </div>
 
-                <button class="footer__btn col-2 offset-1 col-lg-1 offset-lg-2">Fin</button>
+                <button class="footer__btn col-2 offset-1 col-lg-1 offset-lg-2" @click="home()">Fin</button>
             </div>
         </div>
         <error-component v-if="!roomAvailable&&roomAvailable!==undefined" :msg="errorMsg" :notIndex='true'></error-component>
@@ -34,7 +37,9 @@ export default {
             userStream: false,
             socket: false,
             peer: false,
-            nbVideos: 0
+            nbVideos: 0,
+            hideChat: true,
+            hideUsers: true
         };
     },
 
@@ -49,6 +54,23 @@ export default {
             console.log('click [ OK ]');
             this.socket.emit('disconnect');
         },
+
+        home() {
+            this.$router.push({name: 'index'});
+        },
+
+        hideDisplay(element) {
+            this[element] = !this[element];
+
+            if (this.hideChat === false || this.hideUsers === false) {
+                this.$refs.chatUsers.classList.add('col-3');
+                this.$refs.videoGrid.classList.add('col-8');
+                } else {
+                this.$refs.chatUsers.classList.remove('col-3');
+                this.$refs.videoGrid.classList.remove('col-8');
+            }
+        },
+
         muteUnmuteAudio(){
             let bool = !this.userStream.getAudioTracks()[0].enabled;
             this.userStream.getAudioTracks()[0].enabled = bool;
@@ -87,10 +109,6 @@ export default {
         },
     },
 
-    // beforeCreate() {
-    //     console.log('before');
-    // },
-
     beforeDestroy() {
         if (this.userStream !== false) {
             this.userStream.getTracks().forEach(track => {
@@ -102,7 +120,7 @@ export default {
     },
 
     created() {
-        this.socket = io.connect('http://localhost:3000', {reconnection: true});
+        this.socket = io.connect('http://localhost:3000');
         this.peer = new Peer(undefined, {
             path: '/peerjs',
             host: '/',
@@ -171,7 +189,7 @@ export default {
             this.errorMsg = 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
         });
 
-        this.socket.on('user-connected', remotePeerId => {
+        this.socket.on('user-connected', remotePeerId=> {
             const call = this.peer.call(remotePeerId, this.userStream);
             const remoteVideo = document.createElement('video');
             const cell = document.createElement('div');
@@ -219,6 +237,7 @@ export default {
     }
 
     .room__video-grid {
+        overflow: hidden;
         display: grid;
         margin-top: auto;
     }
@@ -247,17 +266,31 @@ export default {
             color: #A8A8A8;
         }
 
+        sup {
+            margin-left: 5px;
+            color: #A8A8A8;
+        }
+
+
         &:hover {
             background-color: #2E2E2E;
             border-radius: 10px;
             cursor: pointer;
 
-            i,span {
+            i, span, sup {
                 color: #D5D5D5;
             }
 
             .fa-video-slash, .fa-microphone-slash {
                 color: #DE2828;
+            }
+        }
+
+        &:active {
+            background-color: #424242;
+
+            i, span, sup {
+                color: white;
             }
         }
 
@@ -277,13 +310,18 @@ export default {
         padding: 4px 15px;
 
         &:hover {
-            background-color: #DE2828;
+            background-color: #de2828;
+        }
+
+        &:active {
+            background-color: #f52b2b;
         }
     }
 
     @media (max-width: 650px) {
     .controls__icon {
         margin: 5px;
+        padding: 5px;
         i {
             font-size: 18px;
         }

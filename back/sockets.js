@@ -4,14 +4,14 @@ module.exports = (server, rooms) => {
 
     io.on('connection', socket => {
 
-        socket.on('join-room', (roomId, userId) => {
+        socket.on('join-room', (roomId, userId, userPseudo) => {
             let requiredRoom = rooms.filter(v => v.id == roomId);
 
 
             if (requiredRoom.length !== 0) {
+                allUsers.push([socket, roomId, userId, userPseudo]);
                 socket.join(roomId);
                 socket.to(roomId).broadcast.emit('user-connected', userId);
-                allUsers.push([socket, roomId, userId]);
             }
 
             console.log(`Mr ${userId} joined ${roomId}`);
@@ -24,9 +24,10 @@ module.exports = (server, rooms) => {
             if (disconnectedUser != undefined) {
                 let roomId = disconnectedUser[1];
                 let userId = disconnectedUser[2];
+                let userPseudo = disconnectedUser[3];
 
                 console.log(roomId, userId);
-                socket.to(roomId).broadcast.emit('user-disconnected', userId);
+                socket.to(roomId).broadcast.emit('user-disconnected', userId, userPseudo);
                 allUsers.splice(allUsers.indexOf(disconnectedUser), 1);
                 if (allUsers.filter(v => v[1] == roomId).length === 0) {
                     let room = rooms.filter(v => v.id == roomId)[0];
