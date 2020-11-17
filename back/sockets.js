@@ -1,45 +1,63 @@
-module.exports = (server, rooms) => {
+const User = require('./models/userModel');
+const Room = require('./models/roomModel');
+
+module.exports = server => {
     const io = require('socket.io')(server);
-    const allUsers = [];
 
     io.on('connection', socket => {
-
         socket.on('join-room', (roomId, userId, userPseudo) => {
-            let requiredRoom = rooms.filter(v => v.id == roomId);
+            Room.find({id: roomId}, (error, array) => {
+                if (error === null) {
+                    const user = new User();
 
+                    user.pseudo = userPseudo;
+                    user.peerId = userId;
+                    user.roomId = roomId;
+                    user.socketId = socket.id;
 
-            if (requiredRoom.length !== 0) {
-                allUsers.push([socket, roomId, userId, userPseudo]);
-                socket.join(roomId);
-                socket.to(roomId).broadcast.emit('user-connected', userId);
-            }
+                    user.save((error, doc) => {
+                        if (error === null) {
+                            User.find({roomId: roomId}, (error2, array) => {
+                                if (error2 === null) {
+                                    console.log(`Mr ${user.peerId} joined ${roomId}`);
+                                    socket.join(roomId);
+                                    socket.to(roomId).broadcast.emit('user-connected', userId, userPseudo);
+                                    io.to(roomId).emit('total-users', array);
+                                }
+                            });
+                        }
+                    });
 
-            console.log(`Mr ${userId} joined ${roomId}`);
+                }
+            });
+        });
 
+        socket.on('send-msg', (roomId, msg, user) => {
+            io.to(roomId).emit('new-msg', user, msg);
         });
 
         socket.on('disconnect', () => {
-            let disconnectedUser = allUsers.filter(v => v[0] == socket)[0];
+            User.findOneAndDelete({socketId: socket.id}, (error, doc) => {
+                if (error === null && doc !== null) {
+                    const user = doc;
 
-            if (disconnectedUser != undefined) {
-                let roomId = disconnectedUser[1];
-                let userId = disconnectedUser[2];
-                let userPseudo = disconnectedUser[3];
+                    socket.to(user.roomId).broadcast.emit('user-disconnected', user.peerId, user.pseudo);
+                    console.log(`Mr ${user.peerId} leaved ${user.roomId}`);
 
-                console.log(roomId, userId);
-                socket.to(roomId).broadcast.emit('user-disconnected', userId, userPseudo);
-                allUsers.splice(allUsers.indexOf(disconnectedUser), 1);
-                if (allUsers.filter(v => v[1] == roomId).length === 0) {
-                    let room = rooms.filter(v => v.id == roomId)[0];
-                    rooms.splice(rooms.indexOf(room), 1);
+                    User.find({roomId: user.roomId}, (error, array) => {
+                        io.to(user.roomId).emit('total-users', array);
+                        if (error === null && array.length === 0) {
+                            Room.findOneAndDelete({id: user.roomId}, (error, doc) => {
+                                console.log(error);
+                                console.log(doc);
+                            });
+                        }
+                    });
+                } else {
+                    console.log(error);
                 }
-
-                console.log(`Mr ${userId} leaved ${roomId}`);
-            }
+            });
         });
-
-        socket.on('error', error => console.log(error));
-
     });
 
     return io;
