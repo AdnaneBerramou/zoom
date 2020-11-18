@@ -21,7 +21,7 @@ Essayez l'appli <a href="https://shrouded-mesa-57032.herokuapp.com/" target="_bl
 
 <h4>Un peu de détails concernant la partie technique</h4>
 <p>-J'ai opté pour une stack JS, Node.js/Vue.js</p>
-<p>-Pour les appels vidéos j'ai utilisé la bibliothèque <a href="https://peerjs.com/">Peer.js</a> et pour le chat et autres j'ai utilisé Socket.io</p>
+<p>-Pour les appels vidéos j'ai utilisé la bibliothèque Peer.js et pour le chat et autres j'ai utilisé Socket.io</p>
 <p>-Les données de réunions sont stockés dans une base de données MongoDB, les données utilisateur sont détruites aussitôt qu’un utilisateur quitte une réunion, et les données de réunions sont détruites de que tout le monde s’est déconnecte de celle-ci</p>
 
-<b>/!\ veuillez m'informer de tout problème rencontrer lors de votre visite sur l'appli (incompatibilité navigateur, erreurs sur la console et…), merci !</b>
+<b>/!\ veuillez m'informer de tout problème rencontré lors de votre visite sur l'appli (incompatibilité navigateur, erreurs sur la console et…), merci !</b>
