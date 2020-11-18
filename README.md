@@ -17,7 +17,8 @@ Essayez l'appli <a href="https://shrouded-mesa-57032.herokuapp.com/" target="_bl
 <p>-Droits admin à l'hôte de la réunion. Du genre expulser des gens, les mute etc... (à venir)</p>
 <p>-Partager des fichiers par le chat (à venir)</p>
 <p>-Effets sonores lorsque quelqu'un se mute, quitte la salle etc... (à venir)</p>
-<p> les mdp por l'acces</p>
+<p>-Partager son écran (à venir)</p>
+<p>-Enregistrer la réunion (à venir)</p>
 
 <h4>Un peu de détails concernant la partie technique</h4>
 <p>-J'ai opté pour une stack JS, Node.js/Vue.js</p>
