@@ -1,6 +1,6 @@
 # My_Zoom
 
-Essayez l'appli <a href="https://shrouded-mesa-57032.herokuapp.com/">ici</a>
+Essayez l'appli <a href="https://shrouded-mesa-57032.herokuapp.com/" target="_blank">ici</a>
 
 <h2><u>Concernant l'appli</u></h2>
 <p>Sur cette appli vous pourrez créer des appels vidéos en groupe de la même manière que zoom (design calqué sur zoom également)</p>
